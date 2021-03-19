@@ -46,14 +46,11 @@ def input_data(display_data, batch, repeat, shuffle):
     #   etc...
     # For each tweet
     # Shamelessly copied from Tensorflow's NLP Zero to Hero course on YouTube
-    #
-    # This actually takes a really long time... so I'm gonna leave it be for now
-    # tweet_seqs = []
-    # for tweet in tqdm(tokenized_tweets, desc='Creting n-gram sequences:'):
-    #     for i in range(1, len(tokenized_tweets)):
-    #         n_gram_seq = tokenized_tweets[:i+1]
-    #         tweet_seqs.append(n_gram_seq)
-    tweet_seqs = tokenized_tweets # TODO: Multiprocess the stuff at the top and then delete this
+    tweet_seqs = []
+    for tweet in tqdm(tokenized_tweets, desc='Creting n-gram sequences:'):
+        for i in range(1, len(tweet)):
+            n_gram_seq = tweet[:i+1]
+            tweet_seqs.append(n_gram_seq)
 
     # Pad tweet sequences so they're all the same length
     print('Padding sequences...')
@@ -65,7 +62,7 @@ def input_data(display_data, batch, repeat, shuffle):
     # we feed the machine a sequence of words and we train it to 
     # predict the next word
     print('Separating output words...')
-    outputs = tweet_seqs[:,-1].reshape((-1,1))
+    outputs = tweet_seqs[:,-1]
     sequences = tweet_seqs[:,:-1]
 
     # Create dataset. One-hot encode labels. Shuffle, batch and repeat
