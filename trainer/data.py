@@ -14,7 +14,7 @@ def input_data(display_data, batch, repeat, shuffle):
     """
     Retrieve and preprocess data
     """
-    # Read data
+    # Read data. Filter for tweets from the man himself from 2016 through 2020
     print('Reading data...')
     df = pd.read_csv(DATA_FILE)
     df = df[ (df['isRetweet'] != 't') & (df['date'] >= '2016-01-01') & (df['date'] <= '2020-12-31') ]
@@ -47,7 +47,7 @@ def input_data(display_data, batch, repeat, shuffle):
     # For each tweet
     # Shamelessly copied from Tensorflow's NLP Zero to Hero course on YouTube
     tweet_seqs = []
-    for tweet in tqdm(tokenized_tweets, desc='Creting n-gram sequences:'):
+    for tweet in tqdm(tokenized_tweets, desc='Creting n-gram sequences'):
         for i in range(1, len(tweet)):
             n_gram_seq = tweet[:i+1]
             tweet_seqs.append(n_gram_seq)
@@ -75,6 +75,7 @@ def input_data(display_data, batch, repeat, shuffle):
 
     # Display data sample
     if display_data:
+        print(dataset)
         for sequence_batch, output_batch in dataset.take(1):
             print(f'Input sequences: {sequence_batch}')
             print(f'Output Words: {output_batch}')
