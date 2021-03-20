@@ -16,7 +16,7 @@ def train_and_evaluate_model(dataset, num_words, epochs):
     model = create_model_for_vocab_size(num_words)
     model.compile(loss='categorical_crossentropy', optimizer='adam')
     model.summary()
-    model.fit(dataset)
+    model.fit(dataset, epochs=epochs)
     model.save(MODEL_FILE)
 
 
