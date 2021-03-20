@@ -23,11 +23,12 @@ def train_and_evaluate_model(dataset, num_words, epochs):
 if __name__ == '__main__':
     # Parse args
     parser = ArgumentParser(description='Run training task')
+    parser.add_argument('--no-train', dest='train', action='store_false')
     parser.add_argument('--display-data', dest='display_data', action='store_true')
     parser.add_argument('--batch', dest='batch', type=int, default=20)
     parser.add_argument('--repeat', dest='repeat', type=int, default=5)
     parser.add_argument('--shuffle', dest='shuffle', type=int, default=200)
-    parser.add_argument('--epochs', dest='epochs', type=int, default=1)
+    parser.add_argument('--epochs', dest='epochs', type=int, default=5)
     args = parser.parse_args()
 
     # Retrieve data
@@ -36,4 +37,8 @@ if __name__ == '__main__':
         batch=args.batch,
         repeat=args.repeat,
         shuffle=args.shuffle)
-    train_and_evaluate_model(dataset, num_words, DEF_EPOCHS)
+    if args.train:
+        train_and_evaluate_model(
+            dataset=dataset,
+            num_words=num_words,
+            epochs=args.epochs)

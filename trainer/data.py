@@ -9,6 +9,7 @@ from tqdm import tqdm
 
 # Relative path of data input file
 DATA_FILE = 'files/data/tweets.csv'
+TOKENIZER_FILE = 'files/support/tokenizer.json'
 
 def input_data(display_data, batch, repeat, shuffle):
     """
@@ -30,6 +31,9 @@ def input_data(display_data, batch, repeat, shuffle):
     print('Tokenizing...')
     tokenizer = tf.keras.preprocessing.text.Tokenizer()
     tokenizer.fit_on_texts(tweets)
+    print('Saving file...')
+    with open(TOKENIZER_FILE, 'w+') as tfile:
+        tfile.write(tokenizer.to_json())
     num_words = len(tokenizer.word_index)
     tokenized_tweets = tokenizer.texts_to_sequences(tweets)
 
