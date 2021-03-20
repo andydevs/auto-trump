@@ -34,7 +34,7 @@ def input_data(display_data, batch, repeat, shuffle):
     print('Saving file...')
     with open(TOKENIZER_FILE, 'w+') as tfile:
         tfile.write(tokenizer.to_json())
-    num_words = len(tokenizer.word_index)
+    num_indeces = len(tokenizer.word_index) + 1
     tokenized_tweets = tokenizer.texts_to_sequences(tweets)
 
     # Create input sequences
@@ -72,7 +72,7 @@ def input_data(display_data, batch, repeat, shuffle):
     # Create dataset. One-hot encode labels. Shuffle, batch and repeat
     print('Creating dataset...')
     dataset = tf.data.Dataset.from_tensor_slices((sequences, outputs))
-    dataset = dataset.map(lambda seq, out: (seq, tf.one_hot(out, depth=num_words)))
+    dataset = dataset.map(lambda seq, out: (seq, tf.one_hot(out, depth=num_indeces)))
     dataset = dataset.shuffle(shuffle)
     dataset = dataset.batch(batch)
     dataset = dataset.repeat(repeat)
@@ -85,4 +85,4 @@ def input_data(display_data, batch, repeat, shuffle):
             print(f'Output Words: {output_batch}')
 
     # Return dataset and number of word tokens
-    return dataset, num_words
+    return dataset, num_indeces
