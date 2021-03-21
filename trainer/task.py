@@ -40,7 +40,7 @@ if __name__ == '__main__':
         default=6,
         help='Number of output dimensions in embedding layer')
     parser.add_argument('--lstm-units',
-        dest='embedding_dims',
+        dest='lstm_units',
         type=int,
         default=24,
         help='Number of output units in lstm layer')
