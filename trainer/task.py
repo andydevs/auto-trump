@@ -14,7 +14,10 @@ def train_and_evaluate_model(dataset, num_words, epochs):
     Train and evaluate model
     """
     model = create_model_for_vocab_size(num_words)
-    model.compile(loss='categorical_crossentropy', optimizer='adam')
+    model.compile(
+        loss='categorical_crossentropy',
+        optimizer='adam',
+        metrics=['accuracy'])
     model.summary()
     model.fit(dataset, epochs=epochs)
     model.save(MODEL_FILE)
@@ -23,12 +26,34 @@ def train_and_evaluate_model(dataset, num_words, epochs):
 if __name__ == '__main__':
     # Parse args
     parser = ArgumentParser(description='Run training task')
-    parser.add_argument('--no-train', dest='train', action='store_false', help="don't train model. Just run data step")
-    parser.add_argument('--display-data', dest='display_data', action='store_true', help='display sample of data after preprocessing.')
-    parser.add_argument('--batch', dest='batch', type=int, default=20, help='number of datapoints in a training batch')
-    parser.add_argument('--repeat', dest='repeat', type=int, default=5, help='number of times the dataset is repeated')
-    parser.add_argument('--shuffle', dest='shuffle', type=int, default=200, help='size of shuffle buffer')
-    parser.add_argument('--epochs', dest='epochs', type=int, default=5, help='number of epochs to train for')
+    parser.add_argument('--no-train',
+        dest='train',
+        action='store_false',
+        help="don't train model. Just run data step")
+    parser.add_argument('--display-data',
+        dest='display_data',
+        action='store_true',
+        help='display sample of data after preprocessing.')
+    parser.add_argument('--batch',
+        dest='batch',
+        type=int,
+        default=200,
+        help='number of datapoints in a training batch')
+    parser.add_argument('--repeat',
+        dest='repeat',
+        type=int,
+        default=5,
+        help='number of times the dataset is repeated')
+    parser.add_argument('--shuffle',
+        dest='shuffle',
+        type=int,
+        default=200,
+        help='size of shuffle buffer')
+    parser.add_argument('--epochs',
+        dest='epochs',
+        type=int,
+        default=10,
+        help='number of epochs to train for')
     args = parser.parse_args()
 
     # Retrieve data
@@ -37,6 +62,8 @@ if __name__ == '__main__':
         batch=args.batch,
         repeat=args.repeat,
         shuffle=args.shuffle)
+
+    # Run training task
     if args.train:
         train_and_evaluate_model(
             dataset=dataset,
