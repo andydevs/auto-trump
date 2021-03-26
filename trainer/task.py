@@ -17,7 +17,7 @@ def train_and_evaluate_model(dataset, num_words, embedding_dims, lstm_units, epo
     model.compile(
         loss='categorical_crossentropy',
         optimizer='adam',
-        metrics=['accuracy'])
+        metrics=['accuracy', 'mse'])
     model.summary()
     model.fit(dataset, epochs=epochs)
     model.save(MODEL_FILE)
