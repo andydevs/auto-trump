@@ -9,6 +9,7 @@ from argparse import ArgumentParser
 # Parse arguments
 parser = ArgumentParser()
 parser.add_argument('--words', dest='words', default=20)
+parser.add_argument('--sequences', dest='sequences', default=10)
 args = parser.parse_args()
 
 # Load model and preprocessor
@@ -17,17 +18,19 @@ with open('files/support/tokenizer.json', 'r') as jsonf:
     jsons = jsonf.read()
     tokenizer = tf.keras.preprocessing.text.tokenizer_from_json(jsons)
 
-# Create a random starting word
-word = randint(1, len(tokenizer.word_index))
+# Create a random starting word for each sentence
+sequences = np.array([
+    [randint(1, len(tokenizer.word_index))]
+    for i in range(args.sequences)
+])
 
-# Predict next words in sequence
-sequence = []
+# Predict next words in sequences
 for i in range(args.words):
-    sequence.append(word)
-    word_labels = model.predict([word])
-    word = np.argmax(word_labels)
-    word = int(word)
+    model.reset_states()
+    word_labels = model.predict(sequences)
+    words = np.argmax(word_labels, axis=1).reshape(-1,1)
+    sequences = np.concatenate((sequences, words), axis=1)
 
 # Append to text
-text = tokenizer.sequences_to_texts([sequence])
-print(text)
+texts = tokenizer.sequences_to_texts(sequences)
+print(*texts, sep='\n', end='')
