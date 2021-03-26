@@ -14,8 +14,11 @@ def train_and_evaluate_model(dataset, vocab_size, train, epochs):
     Train and evaluate model
     """
     model = tf.keras.Sequential([
-        tf.keras.layers.Embedding(vocab_size, 6),
-        tf.keras.layers.LSTM(24),
+        tf.keras.layers.Embedding(vocab_size, 100),
+        tf.keras.layers.LSTM(750, return_sequences=True),
+        tf.keras.layers.Dropout(0.2),
+        tf.keras.layers.LSTM(750),
+        tf.keras.layers.Dropout(0.2),
         tf.keras.layers.Dense(vocab_size, activation='softmax')
     ])
     model.compile(
