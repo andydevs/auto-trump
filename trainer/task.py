@@ -1,26 +1,31 @@
 """
 Run training task
 """
+import tensorflow as tf
 from argparse import ArgumentParser
 from .data import input_data
-from .model import create_model_for_vocab_size
 
 # Saved model file
 MODEL_FILE = 'files/models/saved-model.h5'
 
 
-def train_and_evaluate_model(dataset, num_words, embedding_dims, lstm_units, epochs):
+def train_and_evaluate_model(dataset, vocab_size, train, epochs):
     """
     Train and evaluate model
     """
-    model = create_model_for_vocab_size(num_words, embedding_dims, lstm_units)
+    model = tf.keras.Sequential([
+        tf.keras.layers.Embedding(vocab_size, 6),
+        tf.keras.layers.LSTM(24),
+        tf.keras.layers.Dense(vocab_size, activation='softmax')
+    ])
     model.compile(
         loss='categorical_crossentropy',
         optimizer='adam',
         metrics=['accuracy', 'mse'])
     model.summary()
-    model.fit(dataset, epochs=epochs)
-    model.save(MODEL_FILE)
+    if train:
+        model.fit(dataset, epochs=epochs)
+        model.save(MODEL_FILE)
 
 
 if __name__ == '__main__':
@@ -34,16 +39,6 @@ if __name__ == '__main__':
         dest='display_data',
         action='store_true',
         help='display sample of data after preprocessing.')
-    parser.add_argument('--embedding-dims',
-        dest='embedding_dims',
-        type=int,
-        default=6,
-        help='Number of output dimensions in embedding layer')
-    parser.add_argument('--lstm-units',
-        dest='lstm_units',
-        type=int,
-        default=24,
-        help='Number of output units in lstm layer')
     parser.add_argument('--batch',
         dest='batch',
         type=int,
@@ -66,18 +61,14 @@ if __name__ == '__main__':
         help='number of epochs to train for')
     args = parser.parse_args()
 
-    # Retrieve data
-    dataset, num_words = input_data(
+    # Retrieve data and run training task
+    dataset, vocab_size = input_data(
         display_data=args.display_data,
         batch=args.batch,
         repeat=args.repeat,
         shuffle=args.shuffle)
-
-    # Run training task
-    if args.train:
-        train_and_evaluate_model(
-            dataset=dataset,
-            num_words=num_words,
-            embedding_dims=args.embedding_dims,
-            lstm_units=args.lstm_units,
-            epochs=args.epochs)
+    train_and_evaluate_model(
+        dataset=dataset,
+        vocab_size=vocab_size,
+        train=args.train,
+        epochs=args.epochs)
