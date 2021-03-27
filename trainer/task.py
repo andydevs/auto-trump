@@ -4,6 +4,10 @@ Run training task
 import tensorflow as tf
 from argparse import ArgumentParser
 from .data import input_data
+from . import ifttt
+
+# Job Name
+JOB_NAME = 'auto-trump'
 
 # Saved model file
 MODEL_FILE = 'files/models/saved-model.h5'
@@ -24,7 +28,11 @@ def train_and_evaluate_model(dataset, vocab_size, train, epochs):
     model.compile(
         loss='categorical_crossentropy',
         optimizer='adam',
-        metrics=['accuracy', 'mse'])
+        metrics=['accuracy', 'mse'],
+        callbacks=[
+            ifttt.IFTTTTrainingProgressCallback(JOB_NAME, epochs),
+            ifttt.IFTTTTrainingCompleteCallback(JOB_NAME)
+        ])
     model.summary()
     if train:
         model.fit(dataset, epochs=epochs)
