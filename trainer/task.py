@@ -28,14 +28,15 @@ def train_and_evaluate_model(dataset, vocab_size, train, epochs):
     model.compile(
         loss='categorical_crossentropy',
         optimizer='adam',
-        metrics=['accuracy', 'mse'],
-        callbacks=[
-            ifttt.IFTTTTrainingProgressCallback(JOB_NAME, epochs),
-            ifttt.IFTTTTrainingCompleteCallback(JOB_NAME)
-        ])
+        metrics=['accuracy', 'mse'])
     model.summary()
     if train:
-        model.fit(dataset, epochs=epochs)
+        model.fit(dataset,
+            epochs=epochs,
+            callbacks=[
+                ifttt.IFTTTTrainingProgressCallback(JOB_NAME, epochs),
+                ifttt.IFTTTTrainingCompleteCallback(JOB_NAME)
+            ])
         model.save(MODEL_FILE)
 
 
