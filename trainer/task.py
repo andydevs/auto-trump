@@ -18,8 +18,9 @@ def train_and_evaluate_model(dataset, vocab_size, train, epochs):
     Train and evaluate model
     """
     model = tf.keras.Sequential([
-        tf.keras.layers.Embedding(vocab_size, 100),
-        tf.keras.layers.LSTM(128),
+        tf.keras.layers.Embedding(vocab_size, 250),
+        tf.keras.layers.LSTM(500),
+        tf.keras.layers.Dense(750, activation='relu'),
         tf.keras.layers.Dense(vocab_size, activation='softmax')
     ])
     model.compile(
@@ -32,7 +33,7 @@ def train_and_evaluate_model(dataset, vocab_size, train, epochs):
             epochs=epochs,
             callbacks=[
                 tf.keras.callbacks.ReduceLROnPlateau(monitor='loss'),
-                ifttt.IFTTTTrainingProgressCallback(JOB_NAME, epochs),
+                # ifttt.IFTTTTrainingProgressCallback(JOB_NAME, epochs),
                 ifttt.IFTTTTrainingCompleteCallback(JOB_NAME)
             ])
         model.save(MODEL_FILE)

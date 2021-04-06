@@ -19,8 +19,12 @@ with open('files/support/tokenizer.json', 'r') as jsonf:
     tokenizer = tf.keras.preprocessing.text.tokenizer_from_json(jsons)
 
 # Create a random starting word for each sentence
+if tokenizer.num_words:
+    num_indeces = tokenizer.num_words
+else:
+    num_indeces = len1(tokenizer.word_index)
 sequences = np.array([
-    [randint(1, len(tokenizer.word_index))]
+    [randint(1, num_indeces)]
     for i in range(args.sequences)
 ])
 

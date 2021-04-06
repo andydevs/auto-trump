@@ -30,10 +30,14 @@ def input_data(display_data, batch, repeat, shuffle):
     # Train tokenizer and tokenize texts
     print('Tokenizing...')
     tokenizer = tf.keras.preprocessing.text.Tokenizer(
-        filters='!"“$%&()*+,-./:;<=>?[\\]^_`{|}~\t\n'
+        num_words=5000,
+        filters='!"“”$%&()*+,-./:;<=>?[\\]^_`{|}~\t\n'
     )
     tokenizer.fit_on_texts(tweets)
-    num_indeces = len(tokenizer.word_index) + 1
+    if tokenizer.num_words:
+        num_indeces = tokenizer.num_words + 1
+    else:
+        num_indeces = len(tokenizer.word_index) + 1
     print('Number of tokens: ', num_indeces)
     print('Saving file...')
     with open(TOKENIZER_FILE, 'w+') as tfile:
