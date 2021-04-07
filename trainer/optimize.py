@@ -22,7 +22,17 @@ dim_embedding_units = Integer(low=100, high=1000, name='embedding_units')
 dim_lstm_units = Integer(low=100, high=1000, name='lstm_units')
 dim_dense_units = Integer(low=100, high=1000, name='dense_units')
 dimensions = [ dim_embedding_units, dim_lstm_units, dim_dense_units ]
-default_parameters = [ 250, 500, 750 ]
+
+# Load current optimal parameters
+print('Loading current optimal parameters...')
+current_optimal_parameters = [ 250, 500, 750 ]
+with open(OPTIMAL_SAVE_LOCATION, 'r') as f:
+    params = json.load(f)
+    current_optimal_parameters = [
+        int(params['embedding_units']),
+        int(params['lstm_units']),
+        int(params['dense_units'])
+    ]
 
 # Get dataset
 train_data, test_data, vocab_size = input_data(False, 0.75, 200, 5, 200)
@@ -38,7 +48,7 @@ def optimize_model_fun(embedding_units, lstm_units, dense_units):
 
     # Create, train, and evaluate model
     model = create_model(vocab_size, embedding_units, lstm_units, dense_units)
-    model.fit(train_data, epochs=10, callbacks=[ReduceLROnPlateau(monitor='loss')])
+    model.fit(train_data, epochs=5, callbacks=[ReduceLROnPlateau(monitor='loss')])
     loss, accuracy = model.evaluate(test_data)
     print(f'Accuracy: {accuracy:0.2%}')
 
@@ -56,10 +66,11 @@ results = gp_minimize(
     func=optimize_model_fun,
     dimensions=dimensions,
     acq_func='EI',
-    n_calls=40,
-    x0=default_parameters)
+    n_calls=11,
+    x0=current_optimal_parameters)
 
 # Save optimal parameters
+print('Saving...')
 with open(OPTIMAL_SAVE_LOCATION, 'w') as f:
     json.dump({
         dimension.name:str(results.x[index])

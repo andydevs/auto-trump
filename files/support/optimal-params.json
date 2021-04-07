@@ -1,1 +1,1 @@
-{"embedding_units": "1000", "lstm_units": "1000", "dense_units": "100"}
+{"embedding_units": "250", "lstm_units": "500", "dense_units": "750"}
