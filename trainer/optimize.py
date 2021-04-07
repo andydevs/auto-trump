@@ -35,9 +35,6 @@ def optimize_model_fun(embedding_units, lstm_units, dense_units):
     """
     # Print parameters
     print('----------------------------------------------------------------------')
-    print('Embedding units:', embedding_units)
-    print('LSTM units:', lstm_units)
-    print('Dense units:', dense_units)
 
     # Create, train, and evaluate model
     model = create_model(vocab_size, embedding_units, lstm_units, dense_units)
