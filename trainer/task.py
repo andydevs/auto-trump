@@ -4,31 +4,14 @@ Run training task
 import tensorflow as tf
 from argparse import ArgumentParser
 from .data import input_data
-from . import ifttt
+from .model import create_model
+from .ifttt import IFTTTTrainingProgressCallback, IFTTTTrainingCompleteCallback
 
 # Job Name
 JOB_NAME = 'auto-trump'
 
 # Saved model file
 MODEL_FILE = 'files/models/saved-model.h5'
-
-
-def create_model(vocab_size, embedding_units, lstm_units, dense_units):
-    """
-    Create text prediction model
-    """
-    model = tf.keras.Sequential([
-        tf.keras.layers.Embedding(vocab_size, embedding_units),
-        tf.keras.layers.LSTM(lstm_units),
-        tf.keras.layers.Dense(dense_units, activation='relu'),
-        tf.keras.layers.Dense(vocab_size, activation='softmax')
-    ])
-    model.compile(
-        loss='categorical_crossentropy',
-        optimizer='adam',
-        metrics=['accuracy'])
-    model.summary()
-    return model
 
 
 def train_and_evaluate_model(train_dataset, test_dataset, model, epochs):
@@ -39,8 +22,8 @@ def train_and_evaluate_model(train_dataset, test_dataset, model, epochs):
         epochs=epochs,
         callbacks=[
             tf.keras.callbacks.ReduceLROnPlateau(monitor='loss'),
-            ifttt.IFTTTTrainingProgressCallback(JOB_NAME, epochs),
-            ifttt.IFTTTTrainingCompleteCallback(JOB_NAME)
+            IFTTTTrainingProgressCallback(JOB_NAME, epochs),
+            IFTTTTrainingCompleteCallback(JOB_NAME)
         ])
     model.evaluate(test_dataset)
     model.save(MODEL_FILE)
