@@ -8,10 +8,11 @@ import re
 from tqdm import tqdm
 
 # Relative path of data input file
+MAX_TOKENS = 5000
 DATA_FILE = 'files/data/tweets.csv'
 TOKENIZER_FILE = 'files/support/tokenizer.json'
 
-def input_data(display_data, batch, repeat, shuffle):
+def input_data(display_data, train_frac, batch, repeat, shuffle):
     """
     Retrieve and preprocess data
     """
@@ -30,15 +31,15 @@ def input_data(display_data, batch, repeat, shuffle):
     # Train tokenizer and tokenize texts
     print('Tokenizing...')
     tokenizer = tf.keras.preprocessing.text.Tokenizer(
-        num_words=5000,
+        num_words=MAX_TOKENS,
         filters='!"“”$%&()*+,-./:;<=>?[\\]^_`{|}~\t\n'
     )
     tokenizer.fit_on_texts(tweets)
     if tokenizer.num_words:
-        num_indeces = tokenizer.num_words + 1
+        vocab_size = tokenizer.num_words + 1
     else:
-        num_indeces = len(tokenizer.word_index) + 1
-    print('Number of tokens: ', num_indeces)
+        vocab_size = len(tokenizer.word_index) + 1
+    print('Number of tokens: ', vocab_size)
     print('Saving file...')
     with open(TOKENIZER_FILE, 'w+') as tfile:
         tfile.write(tokenizer.to_json())
@@ -79,7 +80,7 @@ def input_data(display_data, batch, repeat, shuffle):
     # Create dataset. One-hot encode labels. Shuffle, batch and repeat
     print('Creating dataset...')
     dataset = tf.data.Dataset.from_tensor_slices((sequences, outputs))
-    dataset = dataset.map(lambda seq, out: (seq, tf.one_hot(out, depth=num_indeces)))
+    dataset = dataset.map(lambda seq, out: (seq, tf.one_hot(out, depth=vocab_size)))
     dataset = dataset.shuffle(shuffle)
     dataset = dataset.batch(batch)
     dataset = dataset.repeat(repeat)
@@ -91,5 +92,10 @@ def input_data(display_data, batch, repeat, shuffle):
             print(f'Input sequences: {sequence_batch}')
             print(f'Output Words: {output_batch}')
 
+    # Split into training and testing data
+    train_num = int(train_frac*len(dataset))
+    train_dataset = dataset.take(train_num)
+    test_dataset = dataset.skip(train_num)
+
     # Return dataset and number of word tokens
-    return dataset, num_indeces
+    return train_dataset, test_dataset, vocab_size

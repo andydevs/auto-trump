@@ -13,14 +13,14 @@ JOB_NAME = 'auto-trump'
 MODEL_FILE = 'files/models/saved-model.h5'
 
 
-def train_and_evaluate_model(dataset, vocab_size, train, epochs):
+def create_model(vocab_size, embedding_units, lstm_units, dense_units):
     """
-    Train and evaluate model
+    Create text prediction model
     """
     model = tf.keras.Sequential([
-        tf.keras.layers.Embedding(vocab_size, 250),
-        tf.keras.layers.LSTM(500),
-        tf.keras.layers.Dense(750, activation='relu'),
+        tf.keras.layers.Embedding(vocab_size, embedding_units),
+        tf.keras.layers.LSTM(lstm_units),
+        tf.keras.layers.Dense(dense_units, activation='relu'),
         tf.keras.layers.Dense(vocab_size, activation='softmax')
     ])
     model.compile(
@@ -28,15 +28,22 @@ def train_and_evaluate_model(dataset, vocab_size, train, epochs):
         optimizer='adam',
         metrics=['accuracy'])
     model.summary()
-    if train:
-        model.fit(dataset,
-            epochs=epochs,
-            callbacks=[
-                tf.keras.callbacks.ReduceLROnPlateau(monitor='loss'),
-                # ifttt.IFTTTTrainingProgressCallback(JOB_NAME, epochs),
-                ifttt.IFTTTTrainingCompleteCallback(JOB_NAME)
-            ])
-        model.save(MODEL_FILE)
+    return model
+
+
+def train_and_evaluate_model(train_dataset, test_dataset, model, epochs):
+    """
+    Train and evaluate model
+    """
+    model.fit(train_dataset,
+        epochs=epochs,
+        callbacks=[
+            tf.keras.callbacks.ReduceLROnPlateau(monitor='loss'),
+            ifttt.IFTTTTrainingProgressCallback(JOB_NAME, epochs),
+            ifttt.IFTTTTrainingCompleteCallback(JOB_NAME)
+        ])
+    model.evaluate(test_dataset)
+    model.save(MODEL_FILE)
 
 
 if __name__ == '__main__':
@@ -50,6 +57,11 @@ if __name__ == '__main__':
         dest='display_data',
         action='store_true',
         help='display sample of data after preprocessing.')
+    parser.add_argument('--train-frac',
+        dest='train_frac',
+        type=float,
+        default=0.75,
+        help='Fraction of dataset reserved for training')
     parser.add_argument('--batch',
         dest='batch',
         type=int,
@@ -73,13 +85,16 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     # Retrieve data and run training task
-    dataset, vocab_size = input_data(
+    train_dataset, test_dataset, vocab_size = input_data(
         display_data=args.display_data,
+        train_frac=args.train_frac,
         batch=args.batch,
         repeat=args.repeat,
         shuffle=args.shuffle)
-    train_and_evaluate_model(
-        dataset=dataset,
-        vocab_size=vocab_size,
-        train=args.train,
-        epochs=args.epochs)
+    model = create_model(vocab_size, 250, 500, 750)
+    if args.train:
+        train_and_evaluate_model(
+            model=model,
+            train_dataset=train_dataset,
+            test_dataset=test_dataset,
+            epochs=args.epochs)
