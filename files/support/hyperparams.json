@@ -1,6 +1,7 @@
 {
-    "embedding_units": 910, 
-    "lstm_units": 482, 
-    "dense_units": 415,
-    "dropout_rate": 0.2
+    "embedding_units": 686,
+    "lstm_units": 291,
+    "dense_units": 258,
+    "dropout_rate": 0.17142510923039322,
+    "_accuracy": 0.31
 }

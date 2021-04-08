@@ -6,11 +6,13 @@ from argparse import ArgumentParser
 from .data import input_data
 from .model import create_model
 from .ifttt import IFTTTTrainingProgressCallback, IFTTTTrainingCompleteCallback
+import json
 
 # Job Name
 JOB_NAME = 'auto-trump'
 
 # Saved model file
+PARAM_SAVE_LOCATION = 'files/support/hyperparams.json'
 MODEL_FILE = 'files/models/saved-model.h5'
 
 
@@ -67,19 +69,28 @@ if __name__ == '__main__':
         help='number of epochs to train for')
     args = parser.parse_args()
 
-    # Retrieve data and run training task
+    # Retrieve dataset
+    print('Generating dataset...')
     train_dataset, test_dataset, vocab_size = input_data(
         display_data=args.display_data,
         train_frac=args.train_frac,
         batch=args.batch,
         repeat=args.repeat,
         shuffle=args.shuffle)
-    model = create_model(vocab_size, 
-        embedding_units=250,
-        lstm_units=500, 
-        dense_units=750,
-        dropout_rate=0.2)
+
+    # Build model with hyperparams
+    print('Loading params...')
+    with open(PARAM_SAVE_LOCATION, 'r') as f:
+        params = json.load(f)
+        model = create_model(vocab_size, 
+            embedding_units=params['embedding_units'],
+            lstm_units=params['lstm_units'], 
+            dense_units=params['dense_units'],
+            dropout_rate=params['dropout_rate'])
+
+    # Train model if training
     if args.train:
+        print('Training...')
         train_and_evaluate_model(
             model=model,
             train_dataset=train_dataset,

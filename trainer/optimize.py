@@ -49,18 +49,20 @@ args = parser.parse_args()
 PARAM_SAVE_LOCATION = 'files/support/hyperparams.json'
 
 # Dimensions
-dim_embedding_units = Integer(low=100, high=1000, name='embedding_units')
-dim_lstm_units = Integer(low=100, high=1000, name='lstm_units')
-dim_dense_units = Integer(low=100, high=1000, name='dense_units')
+dim_embedding_units = Integer(low=100, high=750, name='embedding_units')
+dim_lstm_units = Integer(low=100, high=750, name='lstm_units')
+dim_dense_units = Integer(low=100, high=750, name='dense_units')
 dim_dropout_rate = Real(low=0.0, high=0.25, name='dropout_rate')
 dimensions = [ dim_embedding_units, dim_lstm_units, 
     dim_dense_units, dim_dropout_rate ]
 
-# Load current optimal parameters
+# Load current accuracy and parameters
 print('Loading current hyperparameters...')
+best_accuracy = 0.0
 current_hyper_parameters = [ 250, 500, 750, 0.2 ]
 with open(PARAM_SAVE_LOCATION, 'r') as f:
     params = json.load(f)
+    best_accuracy = params['_accuracy']
     current_hyper_parameters = [
         params['embedding_units'],
         params['lstm_units'],
@@ -76,17 +78,14 @@ train_data, test_data, vocab_size = input_data(
     repeat=args.repeat,
     shuffle=args.shuffle)
 
-
-# Best accuracy
-best_accuracy = 0.0
-
 @use_named_args(dimensions=dimensions)
 def optimize_model_fun(embedding_units, lstm_units, dense_units, dropout_rate):
     """
     Find optimal model in search space
     """
-    print('----------------------------------------------------------------------')
     global best_accuracy
+    print('----------------------------------------------------------------------')
+    print('Dropout Rate:', dropout_rate)
 
     # Create, train, and evaluate model
     model = create_model(vocab_size, embedding_units, lstm_units, dense_units, dropout_rate)
@@ -104,9 +103,11 @@ def optimize_model_fun(embedding_units, lstm_units, dense_units, dropout_rate):
         print('Saving new params...')
         with open(PARAM_SAVE_LOCATION, 'w') as f:
             json.dump({
-                'embedding_units': embedding_units,
-                'lstm_units': lstm_units,
-                'dense_units': dense_units
+                'embedding_units': int(embedding_units),
+                'lstm_units': int(lstm_units),
+                'dense_units': int(dense_units),
+                'dropout_rate': float(dropout_rate),
+                '_accuracy': float(accuracy)
             }, f, indent=4)
         best_accuracy = accuracy
 
