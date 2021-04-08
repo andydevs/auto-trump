@@ -8,14 +8,45 @@ from skopt.space import Integer, Real
 from skopt.utils import use_named_args
 from tensorflow.keras.callbacks import ReduceLROnPlateau
 from tensorflow.python.keras import backend as K
+from argparse import ArgumentParser
 import json
-import tensorflow as tf
+
+# Argument Parser
+parser = ArgumentParser(description='Optimize neural network')
+parser.add_argument('--train-frac',
+    dest='train_frac',
+    type=float,
+    default=0.75,
+    help='Fraction of dataset reserved for training')
+parser.add_argument('--batch',
+    dest='batch',
+    type=int,
+    default=200,
+    help='number of datapoints in a training batch')
+parser.add_argument('--repeat',
+    dest='repeat',
+    type=int,
+    default=5,
+    help='number of times the dataset is repeated')
+parser.add_argument('--shuffle',
+    dest='shuffle',
+    type=int,
+    default=200,
+    help='size of shuffle buffer')
+parser.add_argument('--epochs',
+    dest='epochs',
+    type=int,
+    default=5,
+    help='number of epochs to train for')
+parser.add_argument('--ncalls',
+    dest='ncalls',
+    type=int,
+    default=20,
+    help='number of optimization iterations')
+args = parser.parse_args()
 
 # Optimal parameters save location
-OPTIMAL_SAVE_LOCATION = 'files/support/optimal-params.json'
-
-# Set logging
-tf.get_logger().setLevel('INFO')
+PARAM_SAVE_LOCATION = 'files/support/hyperparams.json'
 
 # Dimensions
 dim_embedding_units = Integer(low=100, high=1000, name='embedding_units')
@@ -26,11 +57,11 @@ dimensions = [ dim_embedding_units, dim_lstm_units,
     dim_dense_units, dim_dropout_rate ]
 
 # Load current optimal parameters
-print('Loading current optimal parameters...')
-current_optimal_parameters = [ 250, 500, 750, 0.2 ]
-with open(OPTIMAL_SAVE_LOCATION, 'r') as f:
+print('Loading current hyperparameters...')
+current_hyper_parameters = [ 250, 500, 750, 0.2 ]
+with open(PARAM_SAVE_LOCATION, 'r') as f:
     params = json.load(f)
-    current_optimal_parameters = [
+    current_hyper_parameters = [
         params['embedding_units'],
         params['lstm_units'],
         params['dense_units'],
@@ -39,15 +70,15 @@ with open(OPTIMAL_SAVE_LOCATION, 'r') as f:
 
 # Get dataset
 train_data, test_data, vocab_size = input_data(
-    display_data=False, 
-    train_frac=0.75, 
-    batch=200, 
-    repeat=5, 
-    shuffle=200)
+    display_data=False,
+    train_frac=args.train_frac,
+    batch=args.batch,
+    repeat=args.repeat,
+    shuffle=args.shuffle)
+
 
 # Best accuracy
 best_accuracy = 0.0
-
 
 @use_named_args(dimensions=dimensions)
 def optimize_model_fun(embedding_units, lstm_units, dense_units, dropout_rate):
@@ -59,7 +90,7 @@ def optimize_model_fun(embedding_units, lstm_units, dense_units, dropout_rate):
 
     # Create, train, and evaluate model
     model = create_model(vocab_size, embedding_units, lstm_units, dense_units, dropout_rate)
-    model.fit(train_data, epochs=5, callbacks=[ReduceLROnPlateau(monitor='loss')])
+    model.fit(train_data, epochs=args.epochs, callbacks=[ReduceLROnPlateau(monitor='loss')])
     loss, accuracy = model.evaluate(test_data)
     print(f'Accuracy: {accuracy:0.2%}')
 
@@ -71,7 +102,7 @@ def optimize_model_fun(embedding_units, lstm_units, dense_units, dropout_rate):
     # Save params if accuracy improved
     if accuracy > best_accuracy:
         print('Saving new params...')
-        with open(OPTIMAL_SAVE_LOCATION, 'w') as f:
+        with open(PARAM_SAVE_LOCATION, 'w') as f:
             json.dump({
                 'embedding_units': embedding_units,
                 'lstm_units': lstm_units,
@@ -88,5 +119,5 @@ results = gp_minimize(
     func=optimize_model_fun,
     dimensions=dimensions,
     acq_func='EI',
-    n_calls=11,
-    x0=current_optimal_parameters)
+    n_calls=args.ncalls,
+    x0=current_hyper_parameters)
