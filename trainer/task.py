@@ -74,7 +74,11 @@ if __name__ == '__main__':
         batch=args.batch,
         repeat=args.repeat,
         shuffle=args.shuffle)
-    model = create_model(vocab_size, 250, 500, 750)
+    model = create_model(vocab_size, 
+        embedding_units=250,
+        lstm_units=500, 
+        dense_units=750,
+        dropout_rate=0.2)
     if args.train:
         train_and_evaluate_model(
             model=model,
