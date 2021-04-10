@@ -12,7 +12,7 @@ import json
 JOB_NAME = 'auto-trump'
 
 # Saved model file
-PARAM_SAVE_LOCATION = 'files/support/hyperparams.json'
+PARAM_FILE = 'files/support/hyperparams.json'
 MODEL_FILE = 'files/models/saved-model.h5'
 
 
@@ -80,7 +80,7 @@ if __name__ == '__main__':
 
     # Build model with hyperparams
     print('Loading params...')
-    with open(PARAM_SAVE_LOCATION, 'r') as f:
+    with open(PARAM_FILE, 'r') as f:
         params = json.load(f)
         model = create_model(vocab_size, 
             embedding_units=params['embedding_units'],

@@ -6,20 +6,72 @@ import pandas as pd
 import numpy as np
 import re
 from tqdm import tqdm
+from collections import defaultdict
 
 # Relative path of data input file
 MAX_TOKENS = 5000
 DATA_FILE = 'files/data/tweets.csv'
 TOKENIZER_FILE = 'files/support/tokenizer.json'
 
+# Start and end date
+START_DATE = '2016-01-01'
+END_DATE = '2020-12-31'
+
+
+def starting_words(top=None):
+    """
+    Retrieve most common starting words 
+    """
+    # Read data
+    print('Reading data...')
+    df = pd.read_csv(DATA_FILE)
+    df = df[ (df['isRetweet'] != 't') & (df['date'] >= START_DATE) & (df['date'] <= END_DATE) ]
+    tweets = df['text']
+
+    # Filter out links
+    print('Filtering out links...')
+    link = re.compile(r'https?://[\w\-\_\%\+]+(?:[\/\.\?\=\&]+[\w\-\_\%\+]+)+')
+    tweets = tweets.apply(lambda tweet: link.sub('', tweet))
+    tweets = tweets[ tweets.apply(len) > 0 ]
+    
+    # Tokenize
+    print('Tokenizing...')
+    with open(TOKENIZER_FILE, 'r') as jsonf:
+        jsons = jsonf.read()
+        tokenizer = tf.keras.preprocessing.text.tokenizer_from_json(jsons)
+    tweets = tokenizer.texts_to_sequences(tweets)
+
+    # Get first word in each tweet
+    words = [ sequence[0] for sequence in tweets if len(sequence) > 0 ]
+
+    # Organize words by most common to least
+    freqs = defaultdict(lambda: 0)
+    for word in words:
+        freqs[word] += 1
+    counts = np.array(sorted(freqs.items(), key=lambda w: w[1], reverse=True))
+    words = counts[:,0]
+    probs = counts[:,1]
+
+    # Return most n words or all words
+    if top is not None and top < len(words):
+        words = words[:top]
+        probs = probs[:top]
+
+    # Normalize probabilities
+    probs = probs / probs.sum()
+
+    # Return words and probabilities
+    return words, probs
+
+
 def input_data(display_data, train_frac, batch, repeat, shuffle):
     """
     Retrieve and preprocess data
     """
-    # Read data. Filter for tweets from the man himself from 2016 through 2020
+    # Read data. Filter for tweets from the man himself within start and end dates
     print('Reading data...')
     df = pd.read_csv(DATA_FILE)
-    df = df[ (df['isRetweet'] != 't') & (df['date'] >= '2016-01-01') & (df['date'] <= '2020-12-31') ]
+    df = df[ (df['isRetweet'] != 't') & (df['date'] >= START_DATE) & (df['date'] <= END_DATE) ]
     tweets = df['text']
 
     # Filter out links

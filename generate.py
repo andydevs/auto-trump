@@ -3,13 +3,17 @@ Do a dry run of the AI model
 """
 import tensorflow as tf
 import numpy as np
-from random import randint
+from random import choice
 from argparse import ArgumentParser
+from trainer.data import starting_words
+
+# Maximum number of starting words
+MAX_STARTING_WORDS = 1000
 
 # Parse arguments
 parser = ArgumentParser()
-parser.add_argument('--words', dest='words', default=20)
-parser.add_argument('--sequences', dest='sequences', default=10)
+parser.add_argument('--words', dest='words', type=int, default=20)
+parser.add_argument('--sequences', dest='sequences', type=int, default=10)
 args = parser.parse_args()
 
 # Load model and preprocessor
@@ -19,14 +23,9 @@ with open('files/support/tokenizer.json', 'r') as jsonf:
     tokenizer = tf.keras.preprocessing.text.tokenizer_from_json(jsons)
 
 # Create a random starting word for each sentence
-if tokenizer.num_words:
-    num_indeces = tokenizer.num_words
-else:
-    num_indeces = len1(tokenizer.word_index)
-sequences = np.array([
-    [randint(1, num_indeces)]
-    for i in range(args.sequences)
-])
+words, probs = starting_words(MAX_STARTING_WORDS)
+rng = np.random.default_rng()
+sequences = rng.choice(words, size=(args.sequences, 1), p=probs)
 
 # Predict next words in sequences
 for i in range(args.words):
