@@ -3,5 +3,5 @@
     "lstm_units": 128,
     "dense_units": 682,
     "dropout_rate": 0.1484238483542357,
-    "_accuracy": 0.3310765326023102
+    "_accuracy": 0.3896738588809967
 }
