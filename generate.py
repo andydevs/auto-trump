@@ -12,9 +12,14 @@ MAX_STARTING_WORDS = 1000
 
 # Parse arguments
 parser = ArgumentParser()
+parser.add_argument('--on-cpu', dest='on_cpu', action='store_true')
 parser.add_argument('--words', dest='words', type=int, default=20)
 parser.add_argument('--sequences', dest='sequences', type=int, default=10)
 args = parser.parse_args()
+
+# Set visible devices if on cpu
+if args.on_cpu:
+    tf.config.set_visible_devices([], 'GPU')
 
 # Load model and preprocessor
 model = tf.keras.models.load_model('files/models/saved-model.h5')
