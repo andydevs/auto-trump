@@ -1,11 +1,14 @@
 """
 IFTTT Callbacks
 """
+from dotenv import load_dotenv
 from requests import post
 from tensorflow.keras.callbacks import Callback
+from os import environ
+load_dotenv()
 
 class IFTTTTrainingCallback(Callback):
-    ifttt_key = 'bxoTj4tM935zzKaQcJUQtO'
+    ifttt_key = environ['IFTTT_API_KEY']
     event_name = None
 
     def __init__(self, jobname):
