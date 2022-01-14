@@ -1,12 +1,15 @@
 """
 Retrieve and preprocess
 """
+from concurrent.futures import ThreadPoolExecutor
+from threading import Lock
 import tensorflow as tf
 import pandas as pd
 import numpy as np
 import re
 from tqdm import tqdm
 from collections import defaultdict
+from json import loads as dictload
 
 # Relative path of data input file
 MAX_TOKENS = 5000
@@ -74,51 +77,47 @@ def input_data(display_data, train_frac, batch, repeat, shuffle):
     df = df[ (df['isRetweet'] != 't') & (df['date'] >= START_DATE) & (df['date'] <= END_DATE) ]
     tweets = df['text']
 
-    # Filter out links
-    print('Filtering out links...')
-    link = re.compile(r'https?://[\w\-\_\%\+]+(?:[\/\.\?\=\&]+[\w\-\_\%\+]+)+')
-    tweets = tweets.apply(lambda tweet: link.sub('', tweet))
-    tweets = tweets[ tweets.apply(len) > 0 ]
-
-    # Train tokenizer and tokenize texts
-    print('Tokenizing...')
-    tokenizer = tf.keras.preprocessing.text.Tokenizer(
-        num_words=MAX_TOKENS,
-        filters='!"“”$%&()*+,-./:;<=>?[\\]^_`{|}~\t\n'
-    )
-    tokenizer.fit_on_texts(tweets)
-    if tokenizer.num_words:
-        vocab_size = tokenizer.num_words + 1
-    else:
-        vocab_size = len(tokenizer.word_index) + 1
-    print('Number of tokens: ', vocab_size)
-    print('Saving file...')
-    with open(TOKENIZER_FILE, 'w+') as tfile:
-        tfile.write(tokenizer.to_json())
-    tokenized_tweets = tokenizer.texts_to_sequences(tweets)
+    # String encode
+    tweet_chars = tf.strings.unicode_split(tweets, input_encoding='UTF-8')
+    encode_chars = tf.keras.layers.StringLookup()
+    encode_chars.adapt(tweet_chars)
+    tweet_char_ids = encode_chars(tweet_chars)
+    vocab_size = encode_chars.vocab_size()
 
     # Create input sequences
     # Each row becomes a subset of a tweet upto a specific word.
-    # e.g. 
-    #   Many will
-    #   Many will disagree
-    #   Many will disagree but
-    #   Many will disagree but @FoxNews
-    #   Many will disagree but @FoxNews is
-    #   Many will disagree but @FoxNews is doing
-    #   Many will disagree but @FoxNews is doing nothing
+    # e.g.
+    #   M
+    #   Ma
+    #   Man
+    #   Many
+    #   Many 
+    #   Many w
     #   etc...
     # For each tweet
     # Shamelessly copied from Tensorflow's NLP Zero to Hero course on YouTube
+    tweet_seqs_lock = Lock()
     tweet_seqs = []
-    for tweet in tqdm(tokenized_tweets, desc='Creting n-gram sequences'):
-        for i in range(1, len(tweet)):
-            n_gram_seq = tweet[:i+1]
-            tweet_seqs.append(n_gram_seq)
+    ngram_progress = tqdm(desc='Creating n-gram sequences', total=tweet_char_ids.shape[0])
+    def create_ngram(tweet):
+        ngrams = [ tweet[:i+1] for i in range(1,len(tweet)) ]
+        with tweet_seqs_lock, ngram_progress.get_lock():
+            tweet_seqs.extend(ngrams)
+            ngram_progress.update()        
+    with ThreadPoolExecutor(max_workers=6) as exe:
+        exe.map(create_ngram, tweet_char_ids)
 
     # Pad tweet sequences so they're all the same length
     print('Padding sequences...')
-    tweet_seqs = tf.keras.preprocessing.sequence.pad_sequences(tweet_seqs)
+    tweet_seqs_lock = Lock()
+    tweet_seqs = []
+    tweet_len = 280 # all tweets are max 280 characters long, so we can stick with that for now
+    def pad_tweet(tweet):
+        if len(tweet) < tweet_len:
+            tweet += [ 0 ] * (tweet_len - len(tweet))
+        return tweet
+    with ThreadPoolExecutor(max_workers=6) as exe:
+        tweet_seqs = exe.map(pad_tweet, tweet_seqs)
     tweet_seqs = np.array(tweet_seqs)
 
     # Now we take the last column and set it as the output.
@@ -150,4 +149,4 @@ def input_data(display_data, train_frac, batch, repeat, shuffle):
     test_dataset = dataset.skip(train_num)
 
     # Return dataset and number of word tokens
-    return train_dataset, test_dataset, vocab_size
+    return train_dataset, test_dataset
