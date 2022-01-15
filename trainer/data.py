@@ -8,16 +8,16 @@ from tqdm import tqdm
 # Relative path of data input file
 MAX_TOKENS = 5000
 DATA_FILE = 'files/data/tweets.csv'
+PRP_DATA_FILE = 'files/data/prp-tweet-dataset'
 TOKENIZER_FILE = 'files/support/tokenizer.json'
 
 # Start and end date
 START_DATE = '2016-01-01'
 END_DATE = '2020-12-31'
 
-
-def input_data(display_data, train_frac, batch, repeat, shuffle):
+def preprocess_data():
     """
-    Retrieve and preprocess data
+    Preprocess and save data
     """
     # Read data. Filter for tweets from the man himself within start and end dates
     print('Reading data...')
@@ -60,15 +60,26 @@ def input_data(display_data, train_frac, batch, repeat, shuffle):
     # Now we take the last column and set it as the output.
     # The remaining columns are our input sequences. So, basically
     # we feed the machine a sequence of words and we train it to 
-    # predict the next word
-    print('Separating output words...')
+    # predict the next word. After that, we one-hot encode the output
+    # and create a dataset from the sequences array and the output array
+    print('Separating output words and creating dataset...')
     outputs = tweet_seqs[:,-1]
     sequences = tweet_seqs[:,:-1]
-
-    # Create dataset. One-hot encode labels. Shuffle, batch and repeat
-    print('Creating dataset...')
     dataset = tf.data.Dataset.from_tensor_slices((sequences, outputs))
     dataset = dataset.map(lambda seq, out: (seq, tf.one_hot(out, depth=vocab_size)))
+
+    # Save data
+    print('Saving...')
+    tf.data.experimental.save(dataset, PRP_DATA_FILE)
+
+
+def input_data(display_data, train_frac, batch, repeat, shuffle):
+    """
+    Retrieve and preprocess data
+    """
+    # Load data. Shuffle, batch and repeat
+    print('Loading and batching data')
+    dataset = tf.data.experimental.load(PRP_DATA_FILE)
     dataset = dataset.shuffle(shuffle)
     dataset = dataset.batch(batch)
     dataset = dataset.repeat(repeat)
